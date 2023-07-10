@@ -1,137 +1,129 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Voice Questionnaire</title>
-  <style>
-    .button {
-      display: inline-block;
-      text-align: center;
-      text-decoration: none;
-      margin: 1px;
-      border: 1px solid #000000;
-      border-radius: 3px;
-      background-color: #f2f2f2;
-      color: #333;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <h1>Voice Questionnaire</h1>
-  <form id="questionnaireForm">
-    <div id="questions"></div>
+  <head>
+    <title>Voice Questionnaire</title>
+    <style>
+      .button {
+        display: inline-block;
+        text-align: center;
+        text-decoration: none;
+        margin: 1px;
+        border: 1px solid #000000;
+        border-radius: 3px;
+        background-color: #f2f2f2;
+        color: #333;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Voice Questionnaire</h1>
+    <form id="questionnaireForm" method="post" action="https://script.google.com/macros/s/AKfycbyMsyn3OvMWqz_5C1PozcBwUzkR5kB8RrJpHBhlqkpytmz3kRdeYO1zERvlELvg817F/exec">
+      <div id="questions"></div>
 
-    <button type="submit">Submit</button>
-  </form>
+      <button type="submit">Submit</button>
+    </form>
 
-  <script>
-    var recognition; // Declare the recognition variable globally
+    <script>
+      var recognition; // Declare the recognition variable globally
 
-    // Create an array of questions
-    var questions = [
-      "Question 1: What is your name?",
-      "Question 2: Where are you from?",
-      "Question 3: What is your favorite color?",
-      "Question 4: How do you spend your free time?"
-    ];
+      // Create an array of questions
+      var questions = [
+        "Question 1: What is your name?",
+        "Question 2: Where are you from?",
+        "Question 3: What is your favorite color?",
+        "Question 4: How do you spend your free time?",
+        "Question 5: Int main?",
+      ];
 
-    // Create a div for each question
-    var questionsDiv = document.getElementById("questions");
-    questions.forEach(function(question, index) {
-      var questionDiv = document.createElement("div");
-      questionDiv.textContent = question;
+      // Create a div for each question
+      var questionsDiv = document.getElementById("questions");
+      questions.forEach(function (question, index) {
+        var questionDiv = document.createElement("div");
+        questionDiv.textContent = question;
 
-      // Create a separate div to display the answer
-      var answerDiv = document.createElement("div");
-      answerDiv.setAttribute("name", "answer" + index); // Set name attribute for answer input
+        // Create a separate div to display the answer
+        var answerDiv = document.createElement("input");
+        answerDiv.setAttribute("name", "Q" + (index+1)); // Set name attribute for answer input
 
-      // Create buttons for starting and stopping recording
-      var startButton = document.createElement("a");
-      startButton.textContent = "Start Recording";
-      startButton.className = "button"
-      var stopButton = document.createElement("a");
-      stopButton.textContent = "Stop Recording";
-      stopButton.className = "button"
+        // Create buttons for starting and stopping recording
+        var startButton = document.createElement("a");
+        startButton.textContent = "Start Recording";
+        startButton.className = "button";
+        var stopButton = document.createElement("a");
+        stopButton.textContent = "Stop Recording";
+        stopButton.className = "button";
 
-      // Add event listeners for starting and stopping recording
-      startButton.addEventListener("click", function() {
-        startRecording(index);
-        console.log("clicked")  
-      });
-      stopButton.addEventListener("click", function() {
-        stopRecording(index);
-      });
+        // Add event listeners for starting and stopping recording
+        startButton.addEventListener("click", function () {
+          startRecording(index);
+          console.log("clicked");
+        });
+        stopButton.addEventListener("click", function () {
+          stopRecording(index);
+        });
 
-      // Append question, start button, stop button, and answer div to the question div
-      questionDiv.appendChild(startButton);
-      questionDiv.appendChild(stopButton);
-      questionDiv.appendChild(answerDiv);
+        // Append question, start button, stop button, and answer div to the question div
+        questionDiv.appendChild(startButton);
+        questionDiv.appendChild(stopButton);
+        questionDiv.appendChild(answerDiv);
 
-      // Append the question div to the questions container
-      questionsDiv.appendChild(questionDiv);
-    });
-
-    // Submit button event listener
-    var form = document.getElementById("questionnaireForm");
-    form.addEventListener("submit", function(event) {
-      event.preventDefault(); // Prevent default form submission
-
-      var answers = Array.from(document.querySelectorAll("#questions [name^='answer']"));
-      var answersText = answers.map(function(answer) {
-        return answer.textContent.trim().replace("Answer: ", "");
+        // Append the question div to the questions container
+        questionsDiv.appendChild(questionDiv);
       });
 
-      console.log("Answers:", answersText);
-      let csv = "";
-      for (const [key, value] of answers.entries()) {
-        csv += `${questions[key]},${value.textContent}\n`;
+      // Submit button event listener
+      var form = document.getElementById("questionnaireForm");
+      form.addEventListener("submit", function (event) {
+        // event.preventDefault(); // Prevent default form submission
+
+        var answers = Array.from(
+          document.querySelectorAll("#questions [name^='Q']")
+        );
+        var answersText = answers.map(function (answer) {
+          return answer.value;
+        });
+
+        console.log("Answers:", answersText);
+
+        // Additional code for submitting the answers to the backend
+        // You can use the answersText array to send the answers via an AJAX request or by updating the form action and submitting it.
+      });
+
+      // Function to start recording
+      var recognizing = false;
+      function startRecording(questionIndex) {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.start();
+
+        recognition.onstart = function () {
+          console.log("started");
+          recognizing = true;
+        };
+
+        recognition.onend = function () {
+          console.log("ended");
+          recognizing = false;
+        };
+        // Process the recognized speech
+        recognition.onresult = function (event) {
+          console.log("result", event.results);
+          var answer = event.results[0][0].transcript;
+          var answerDiv = document
+            .getElementById("questions")
+            .children[questionIndex].querySelector("input");
+          answerDiv.value = answer;
+          console.log({ Data: answer });
+        };
+        // console.log("started")
       }
 
-      // Create download link for the CSV file
-      const downloadLink = document.createElement("a");
-      downloadLink.textContent = "Download"
-      downloadLink.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-      downloadLink.download = "form_data.csv";
-
-      // Trigger the download
-      downloadLink.click();
-
-      // Additional code for submitting the answers to the backend
-      // You can use the answersText array to send the answers via an AJAX request or by updating the form action and submitting it.
-    });
-
-    // Function to start recording
-    var recognizing = false;
-    function startRecording(questionIndex) {
-      recognition = new webkitSpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.start();
-
-      recognition.onstart = function() {
-        console.log("started")
-        recognizing = true;
-      };
-
-      recognition.onend = function() {
-        console.log("ended")
-        recognizing = false;
-      };
-      // Process the recognized speech
-      recognition.onresult = function(event) {
-        console.log("result", event.results)
-        var answer = event.results[0][0].transcript;
-        var answerDiv = document.getElementById("questions").children[questionIndex].querySelector("div");
-        answerDiv.textContent = "Answer: " + answer;
-        console.log({"Data":answer})
-      };
-      // console.log("started")
-    }
-
-    // Function to stop recording
-    function stopRecording(questionIndex) {
-      recognition.stop();
-    }
-  </script>
-</body>
+      // Function to stop recording
+      function stopRecording(questionIndex) {
+        recognition.stop();
+      }
+    </script>
+  </body>
 </html>
